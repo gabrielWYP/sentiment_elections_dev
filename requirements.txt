@@ -1,0 +1,34 @@
+# Backend API
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Database
+oracledb==1.4.1
+sqlalchemy==2.0.23
+
+# YouTube & Web Scraping
+yt-dlp>=2024.11.0  # Versión reciente, actualizado regularmente
+requests==2.31.0
+
+# Sentiment Analysis - ONNX Runtime (ARM64 optimizado)
+# ONNX vs Torch: 50MB vs 2GB, más rápido en ARM64
+transformers==4.37.0
+onnxruntime==1.18.0
+
+# Data Processing
+numpy==1.26.3
+pandas==2.1.4
+scikit-learn==1.4.0
+
+# Async & File Handling
+python-multipart==0.0.6
+aiofiles==23.2.1
+
+# Config & Logging
+python-dotenv==1.0.0
+loguru==0.7.2
+
+# Task Scheduling
+apscheduler==3.10.4
