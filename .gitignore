@@ -1,2 +1,4 @@
 .env
 OPTIMIZATIONS.md
+*.pyc
+__pycache__/

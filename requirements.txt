@@ -10,6 +10,7 @@ sqlalchemy==2.0.23
 
 # YouTube & Web Scraping
 yt-dlp>=2024.11.0  # Versión reciente, actualizado regularmente
+youtube-comment-downloader>=0.1.9  # Extracción de comentarios de YouTube
 requests==2.31.0
 
 # Sentiment Analysis - ONNX Runtime (ARM64 optimizado)
@@ -21,6 +22,7 @@ onnxruntime==1.18.0
 numpy==1.26.3
 pandas==2.1.4
 scikit-learn==1.4.0
+langdetect==1.0.9  # Detección de idioma
 
 # Async & File Handling
 python-multipart==0.0.6
