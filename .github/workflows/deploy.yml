@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted  # <--- Esto busca tu runner en la VM
+    runs-on: Sentiment-Runner  # <--- Sentiment Elections self-hosted runner
     
     steps:
       # 1. El runner descarga el código nuevo del repo
