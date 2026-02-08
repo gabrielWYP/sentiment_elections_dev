@@ -57,4 +57,4 @@ def get_settings():
 # Instancia global de configuración
 settings = get_settings()
 
-#ci/c
+#ci/cd
