@@ -105,50 +105,6 @@ async def health_check():
 # Incluir routers de módulos específicos
 app.include_router(scraper_router, prefix="/api/v1", tags=["Scraper"])
 
-
-# ==================== PLACEHOLDER ROUTES ====================
-
-@app.get("/api/v1/trends")
-async def get_trends():
-    """Obtener tendencias políticas"""
-    return {
-        "status": "placeholder",
-        "message": "Endpoint no implementado aún"
-    }
-
-
-@app.get("/api/v1/parties")
-async def get_parties():
-    """Obtener análisis por partido"""
-    return {
-        "status": "placeholder",
-        "message": "Endpoint no implementado aún"
-    }
-
-
-@app.get("/api/v1/comments")
-async def get_comments(limit: int = 10, party: str = None):
-    """Obtener comentarios analizados"""
-    return {
-        "status": "placeholder",
-        "message": "Endpoint no implementado aún",
-        "filters": {
-            "limit": limit,
-            "party": party
-        }
-    }
-
-
-@app.post("/api/v1/sentiment")
-async def analyze_sentiment(text: str):
-    """Analizar sentimiento de un texto"""
-    return {
-        "status": "placeholder",
-        "message": "Endpoint no implementado aún",
-        "input": text
-    }
-
-
 # ==================== ERROR HANDLERS ====================
 
 @app.exception_handler(HTTPException)

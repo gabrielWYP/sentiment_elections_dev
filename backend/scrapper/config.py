@@ -2,7 +2,7 @@
 Configuración del scraper de YouTube
 """
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from typing import List
 import os
 from functools import lru_cache
@@ -34,26 +34,101 @@ class ScraperSettings(BaseSettings):
     # Idioma
     ALLOWED_LANGUAGES: List[str] = ["es"]    # Solo español
     
-    # Partidos políticos a monitorear (será actualizado por el usuario)
+    # Partidos políticos a monitorear - Elecciones Perú 2026
     POLITICAL_PARTIES: dict = {
-        "Peru Libre": [
-            "pedro castillo",
-            "peru libre",
-            "vladimir cerrón",
-            "junín",
+        "Renovación Popular": [
+            "renovación popular",
+            "rafael lópez aliaga",
+            "rafael lopez aliaga",
+            "alcalde lima",
         ],
         "Fuerza Popular": [
-            "keiko fujimori",
             "fuerza popular",
-            "vargas llosa",
+            "keiko fujimori",
+            "fujimorismo",
+            "votante fujimorista",
         ],
-        "Juntos por el Perú": [
-            "vladimiro montesinos",
-            "juntos por el peru",
+        "País Para Todos": [
+            "país para todos",
+            "pais para todos",
+            "carlos álvarez",
+            "carlos alvarez",
+            "comediante político",
+            "comediano político",
         ],
-        "Acción Popular": [
-            "acción popular",
-            "escritorio político",
+        "Ahora Nación": [
+            "ahora nación",
+            "ahora nacion",
+            "alfonso lópez chau",
+            "alfonso lopez chau",
+            "rector uni",
+            "universidad nacional de ingeniería",
+            "centro-izquierda",
+            "izquierda académica",
+        ],
+        "Perú Primero": [
+            "perú primero",
+            "peru primero",
+            "mario vizcarra",
+            "martín vizcarra",
+            "martin vizcarra",
+            "vizcarrismo",
+        ],
+        "Alianza para el Progreso": [
+            "alianza para el progreso",
+            "app perú",
+            "app peru",
+            "césar acuña",
+            "cesar acuña",
+            "cesar acuna",
+        ],
+        "Podemos Perú": [
+            "podemos perú",
+            "podemos peru",
+            "josé luna gálvez",
+            "jose luna galvez",
+            "luna gálvez",
+        ],
+        "Somos Perú": [
+            "somos perú",
+            "somos peru",
+            "george forsyth",
+            "exalcalde la victoria",
+            "alcalde la victoria",
+        ],
+        "Avanza País": [
+            "avanza país",
+            "avanza pais",
+            "josé williams zapata",
+            "jose williams zapata",
+            "williams zapata",
+            "expresidente congreso",
+            "comando chavín de huántar",
+            "comando chavin",
+        ],
+        "Partido Aprista Peruano": [
+            "apra",
+            "partido aprista peruano",
+            "aprista",
+            "jorge del castillo",
+            "aprismo",
+        ],
+        "Perú Libre": [
+            "perú libre",
+            "peru libre",
+            "vladimir cerrón",
+            "vladimir cerron",
+            "waldemar cerrón",
+            "waldemar cerron",
+            "pedro castillo",
+            "castillismo",
+        ],
+        "Frente de la Esperanza": [
+            "frente de la esperanza",
+            "frente esperanza",
+            "fernando olivera",
+            "popy olivera",
+            "popy",
         ],
     }
     
@@ -66,16 +141,14 @@ class ScraperSettings(BaseSettings):
     # Logging
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {"env_file": ".env"}
     
     def get_party_keywords(self, party_name: str = None) -> List[str]:
         """
         Obtener palabras clave de un partido
         
         Args:
-            party_name: Nombre del partido (ej: "Peru Libre")
+            party_name: Nombre del partido (ej: "Renovación Popular")
                        Si es None, retorna todas las palabras clave
         
         Returns:
@@ -90,6 +163,29 @@ class ScraperSettings(BaseSettings):
             all_keywords.extend(keywords)
         
         return all_keywords
+    
+    def classify_comment_by_party(self, text: str) -> str:
+        """
+        Clasificar un comentario por partido político basado en palabras clave
+        
+        Args:
+            text: Texto del comentario
+        
+        Returns:
+            Nombre del partido o "Sin partido" si no coincide
+        """
+        text_lower = text.lower()
+        
+        for party, keywords in self.POLITICAL_PARTIES.items():
+            for keyword in keywords:
+                if keyword.lower() in text_lower:
+                    return party
+        
+        return "Sin partido"
+    
+    def get_all_parties(self) -> List[str]:
+        """Obtener lista de todos los partidos monitoreados"""
+        return list(self.POLITICAL_PARTIES.keys())
 
 
 @lru_cache()

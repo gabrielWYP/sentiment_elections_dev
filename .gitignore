@@ -2,3 +2,4 @@
 OPTIMIZATIONS.md
 *.pyc
 __pycache__/
+*.onnx
