@@ -6,4 +6,4 @@ __pycache__/
 *env
 *onnx*
 .kiro
-/frontend/node_modules/
+*node_modules

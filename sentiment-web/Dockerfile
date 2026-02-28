@@ -3,7 +3,7 @@ FROM node:22-slim AS react-build
 
 WORKDIR /react-build
 
-COPY frontend/package*.json ./
+COPY package*.json ./
 
 RUN npm install --frozen-lockfile
 

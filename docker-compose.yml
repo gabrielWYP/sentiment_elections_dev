@@ -32,7 +32,7 @@ services:
   # Backend API
   backend:
     build:
-      context: .
+      context: ./sentiment-web
       dockerfile: Dockerfile
     container_name: backend
     ports:
