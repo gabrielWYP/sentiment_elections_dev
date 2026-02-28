@@ -5,10 +5,10 @@ pydantic==2.6.0
 pydantic-settings==2.1.0
 
 # Database
-oracledb==1.4.1
+oracledb
 sqlalchemy==2.0.23
 
-# YouTube & Web Scraping
+# YouTube & Web Scrapingclear
 yt-dlp>=2024.11.0  # Versión reciente, actualizado regularmente
 youtube-comment-downloader>=0.1.9  # Extracción de comentarios de YouTube
 requests==2.31.0
