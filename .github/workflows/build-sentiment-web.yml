@@ -87,21 +87,21 @@ jobs:
             echo "📦 Image tag exportado: ${{ steps.image-tag.outputs.tag }}"
           fi
 
-  deploy-to-k3s:
-    name: Deploy sentiment-web to K3S
-    needs: build-and-push
-    if: github.event_name != 'pull_request'
-    uses: gabrielWYP/K3S_Infra/.github/workflows/deploy-vocational-test.yml@main
-    with:
-      image-tag: ${{ needs.build-and-push.outputs.image-tag }}
-      kube-namespace: ${{ vars.KUBE_NAMESPACE }}
-      kube-deployment: ${{ vars.KUBE_DEPLOYMENT }}
-      registry: ${{ vars.REGISTRY }}
-    secrets:
-      KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
-      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      ORACLE_USER: ${{ secrets.ORACLE_USER }}
-      ORACLE_PASSWORD: ${{ secrets.ORACLE_PASSWORD }}
-      ORACLE_CONNECTION_STRING: ${{ secrets.ORACLE_CONNECTION_STRING }}
-      OCI_PREAUTH_URL_READ: ${{ secrets.OCI_PREAUTH_URL_READ }}
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+#   deploy-to-k3s:
+#     name: Deploy sentiment-web to K3S
+#     needs: build-and-push
+#     if: github.event_name != 'pull_request'
+#     uses: gabrielWYP/K3S_Infra/.github/workflows/deploy-vocational-test.yml@main
+#     with:
+#       image-tag: ${{ needs.build-and-push.outputs.image-tag }}
+#       kube-namespace: ${{ vars.KUBE_NAMESPACE }}
+#       kube-deployment: ${{ vars.KUBE_DEPLOYMENT }}
+#       registry: ${{ vars.REGISTRY }}
+#     secrets:
+#       KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+#       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+#       ORACLE_USER: ${{ secrets.ORACLE_USER }}
+#       ORACLE_PASSWORD: ${{ secrets.ORACLE_PASSWORD }}
+#       ORACLE_CONNECTION_STRING: ${{ secrets.ORACLE_CONNECTION_STRING }}
+#       OCI_PREAUTH_URL_READ: ${{ secrets.OCI_PREAUTH_URL_READ }}
+#       SECRET_KEY: ${{ secrets.SECRET_KEY }}
