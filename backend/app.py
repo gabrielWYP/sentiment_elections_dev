@@ -118,7 +118,7 @@ else:
 # ==================== MIDDLEWARE CONFIGURATION ====================
 
 
-@app.get("/")
+@app.get("/api/v1/info")
 async def root():
     """Endpoint raíz - información de la API"""
     return {
@@ -129,6 +129,7 @@ async def root():
         "endpoints": {
             "health": "/health",
             "docs": "/docs",
+            "info": "/api/v1/info",
             "trends": "/api/v1/trends",
             "parties": "/api/v1/parties",
             "comments": "/api/v1/comments",
@@ -182,11 +183,11 @@ async def general_exception_handler(request, exc):
 
 # ==================== STATIC FILES CONFIGURATION ====================
 # Servir el frontend React (en producción)
-# Buscar el directorio dist del frontend compilado
-frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+# El Dockerfile copia los archivos compilados a /app/static
+frontend_dist = Path("/app/static")
 
 if frontend_dist.exists():
-    logger.info(f"📁 Sirviendo frontend estático desde: {frontend_dist}")
+    logger.info(f"📁 Sirviendo frontend React desde: {frontend_dist}")
     app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="static")
 else:
     logger.warning(f"⚠️  Directorio de frontend no encontrado: {frontend_dist}")

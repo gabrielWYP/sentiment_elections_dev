@@ -1,14 +1,19 @@
 """
-Servicio de análisis de sentimientos usando ONNX BERT Multilingual
-Optimizado para análisis de comentarios en español
-Modelo: nlptown/bert-base-multilingual-uncased-sentiment
+DEPRECATED: Análisis de sentimientos ha sido movido al microservicio sentiment-service
+
+Este módulo ya no se utiliza. Usar en su lugar:
+- backend.sentiment_analysis.sentiment_client.get_sentiment_client()
+
+El análisis de sentimientos ahora se realiza en un contenedor ONNX dedicado
+que se comunica vía HTTP en puerto 8001.
 """
 
 import logging
-from typing import Dict, List
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-import numpy as np
-from scipy.special import softmax
+
+logger = logging.getLogger(__name__)
+
+logger.warning("⚠️ sentiment_service.py está deprecado. Usar sentiment_client.py en su lugar.")
+
 
 logger = logging.getLogger(__name__)
 

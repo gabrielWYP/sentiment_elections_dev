@@ -10,12 +10,13 @@ services:
   # Sentiment Analysis Microservice
   sentiment-service:
     build:
-      context: .
-      dockerfile: sentiment-service/Dockerfile
+      context: ./sentiment-service
+      dockerfile: Dockerfile
     container_name: sentiment-service
     ports:
       - "8001:8001"
     environment:
+      - ENVIRONMENT=development  # Cambiar a 'production' para usar modelo cuantizado
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
     healthcheck:

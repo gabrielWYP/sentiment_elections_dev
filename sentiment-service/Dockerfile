@@ -1,8 +1,8 @@
-# Dockerfile para Sentiment Service - Optimizado
-# Multi-stage para minimizar tamaño
-
 # ============== STAGE 1: BUILDER ==============
-FROM python:3.12-slim as builder
+FROM python:3.11-slim AS builder
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential gcc g++ \
@@ -10,35 +10,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
-COPY sentiment-service/requirements.txt .
-
-# Instalar en wheels para reutilizar
-RUN pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt
+# Copiamos solo lo necesario para el build
+COPY requirements.txt .
+RUN pip wheel --wheel-dir /build/wheels -r requirements.txt
 
 # ============== STAGE 2: RUNTIME ==============
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-ENV TRANSFORMERS_CACHE=/root/.cache/huggingface
+ENV HF_HOME=/root/.cache/huggingface \
+    PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libgomp1 \
+    libpthread-stubs0-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copiar wheels del builder (SIN build-essential)
 COPY --from=builder /build/wheels /tmp/wheels
-COPY sentiment-service/requirements.txt .
+COPY requirements.txt .
 
-# Instalar desde wheels (rápido y sin compilación)
-RUN pip install --no-cache-dir --no-index --find-links /tmp/wheels -r requirements.txt \
+RUN pip install --no-index --find-links /tmp/wheels -r requirements.txt \
     && rm -rf /tmp/wheels
 
-# Copiar código
-COPY sentiment-service/ .
+# Estructura plana: copiamos el script y la carpeta del modelo en la raíz de /app
+COPY app.py .
+COPY ./modelo_onnx/ ./modelo_onnx/
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD python -c "import httpx; httpx.get('http://localhost:8001/health')"
+    CMD curl -f http://localhost:8001/health || exit 1
 
 EXPOSE 8001
 
