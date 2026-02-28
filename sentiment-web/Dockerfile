@@ -5,9 +5,15 @@ WORKDIR /react-build
 
 COPY package*.json ./
 
-RUN npm install --frozen-lockfile
+# Instalar sin scripts opcionales para ahorrar recursos
+RUN npm ci --frozen-lockfile --omit=dev
 
 COPY frontend/ .
+
+# Aumentar memoria de Node.js para Vite/esbuild durante el build
+# y limitar threads para evitar problemas en QEMU
+ENV NODE_OPTIONS="--max-old-space-size=2048" \
+    VITE_WORKERS=2
 
 RUN npm run build
 
