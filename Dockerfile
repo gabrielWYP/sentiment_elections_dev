@@ -12,7 +12,7 @@ COPY frontend/ .
 RUN npm run build
 
 # ============== STAGE 2: PYTHON BUILDER (wheels) ==============
-FROM python:3.12-slim as python-builder
+FROM python:3.12-slim AS python-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
