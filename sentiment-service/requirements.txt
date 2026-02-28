@@ -1,0 +1,11 @@
+fastapi==0.110.0
+uvicorn[standard]==0.27.0
+pydantic==2.6.0
+
+# Sentiment Analysis
+transformers==4.40.0
+onnxruntime==1.17.1
+
+# Utilidades
+numpy<2.0.0
+python-dotenv==1.0.0

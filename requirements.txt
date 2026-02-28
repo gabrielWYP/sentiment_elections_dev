@@ -4,24 +4,21 @@ uvicorn[standard]==0.27.0
 pydantic==2.6.0
 pydantic-settings==2.1.0
 
+# HTTP Client para sentiment-service remoto
+httpx==0.26.0
+
 # Database
 oracledb
 sqlalchemy==2.0.23
 
-# YouTube & Web Scrapingclear
+# YouTube & Web Scraping
 yt-dlp>=2024.11.0  # Versión reciente, actualizado regularmente
 youtube-comment-downloader>=0.1.9  # Extracción de comentarios de YouTube
 requests==2.31.0
 
-# Sentiment Analysis - ONNX Runtime (ARM64 optimizado)
-# ONNX vs Torch: 50MB vs 2GB, más rápido en ARM64
-transformers==4.37.0
-onnxruntime==1.18.0
-
 # Data Processing
-numpy==1.26.3
+numpy>=1.24.0  # Solo para procesamiento de comentarios, no para ML
 pandas==2.1.4
-scikit-learn==1.4.0
 langdetect==1.0.9  # Detección de idioma
 
 # Async & File Handling

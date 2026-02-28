@@ -14,9 +14,13 @@ from backend.schemas import (
     SearchVideosRequest,
     SearchVideosResponse,
     VideoResponse,
+    AnalyzeSentimentRequest,
+    AnalyzeSentimentResponse,
+    SentimentResult,
 )
 from backend.api.services.scrapper_service import ScraperService
 from backend.scrapper import YouTubeScraper
+from backend.sentiment_analysis.sentiment_client import get_sentiment_client
 
 logger = logging.getLogger(__name__)
 
@@ -161,3 +165,104 @@ async def search_videos(request: SearchVideosRequest):
     except Exception as e:
         logger.error(f"Error buscando videos: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error al buscar videos: {str(e)}")
+
+
+@router.post(
+    "/analyze-sentiment",
+    response_model=AnalyzeSentimentResponse,
+    summary="Analizar sentimientos de comentarios",
+)
+async def analyze_sentiment(request: AnalyzeSentimentRequest):
+    """
+    Analiza el sentimiento de múltiples textos/comentarios
+    
+    **Funcionalidades:**
+    - Soporta análisis de batch (múltiples textos)
+    - Usa modelo BERT multilingual (soporta español)
+    - Retorna sentimientos en 3 clases: positive, negative, neutral
+    - Incluye scores de confianza
+    
+    **Parámetros:**
+    - **texts**: Lista de textos a analizar
+    - **language**: Idioma (default: 'es')
+    - **use_simplified**: True para 3 clases, False para 5 clases
+    
+    **Retorna:**
+    - Sentimiento de cada texto
+    - Puntuación de confianza
+    - Estadísticas agregadas
+    - Tiempo de ejecución
+    """
+    try:
+        if not request.texts or len(request.texts) == 0:
+            raise HTTPException(
+                status_code=400,
+                detail="La lista de textos no puede estar vacía"
+            )
+        
+        if len(request.texts) > 500:
+            raise HTTPException(
+                status_code=400,
+                detail="Máximo 500 textos por request"
+            )
+        
+        logger.info(f"🤖 Analizando sentimientos de {len(request.texts)} textos")
+        
+        start_time = time.time()
+        
+        # Usar cliente del sentiment-service
+        sentiment_client = get_sentiment_client()
+        
+        # Llamar al servicio remoto (o fallback local)
+        service_result = await sentiment_client.analyze_sentiment(
+            texts=request.texts,
+            use_simplified=request.use_simplified
+        )
+        
+        sentiments = service_result["sentiments"]
+        scores = service_result["scores"]
+        confidences = service_result["confidences"]
+        service_name = service_result["service"]
+        
+        # Construir resultados
+        results = []
+        stats = {"total": 0, "positive": 0, "negative": 0, "neutral": 0}
+        
+        for text, sentiment, score, confidence in zip(request.texts, sentiments, scores, confidences):
+            if not text or not isinstance(text, str):
+                continue
+            
+            stats[sentiment] += 1
+            stats["total"] += 1
+            
+            results.append(
+                SentimentResult(
+                    text=text.strip(),
+                    sentiment=sentiment,
+                    score=score,
+                    confidence=confidence
+                )
+            )
+        
+        execution_time = time.time() - start_time
+        
+        logger.info(f"✅ Análisis completado ({service_name}): {stats['positive']}+ {stats['negative']}-, {stats['neutral']}= en {execution_time:.2f}s")
+        
+        return AnalyzeSentimentResponse(
+            success=True,
+            message=f"Se analizaron {len(request.texts)} textos exitosamente",
+            texts_analyzed=len(request.texts),
+            sentiments=sentiments,
+            results=results,
+            stats=stats,
+            execution_time_seconds=execution_time
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error analizando sentimientos: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error al analizar sentimientos: {str(e)}"
+        )

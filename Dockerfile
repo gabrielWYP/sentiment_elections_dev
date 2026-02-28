@@ -1,13 +1,23 @@
-# Dockerfile optimizado para ARM64
-# Multi-stage build para minimizar tamaño final
-# Reducción: torch (2GB) → onnxruntime (50MB)
+# ============== STAGE 1: BUILD REACT ==============
+FROM node:22-slim AS react-build
 
-# Stage 1: Builder
-FROM python:3.11-slim as builder
+WORKDIR /react-build
 
-# Instalar dependencias de compilación (solo en builder)
+COPY frontend/package*.json ./
+
+RUN npm install --frozen-lockfile
+
+COPY frontend/ .
+
+RUN npm run build
+
+# ============== STAGE 2: PYTHON BUILDER (wheels) ==============
+FROM python:3.12-slim AS python-builder
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    gcc \
+    g++ \
     git \
     libssl-dev \
     libffi-dev \
@@ -15,23 +25,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
-# Copiar requirements OPTIMIZADOS
 COPY requirements.txt .
 
-# Crear wheel files en /build/wheels
 RUN pip install --no-cache-dir --upgrade pip && \
     pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt
 
-# Stage 2: Runtime (mucho más pequeño)
-FROM python:3.11-slim
+# ============== STAGE 3: RUNTIME (Backend + React) ==============
+FROM python:3.12-slim
 
-# Variables de entorno
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    APP_MODE=PRODUCTION
 
-# Instalar solo dependencias de runtime necesarias
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl3 \
     libffi8 \
@@ -40,30 +47,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copiar wheels del builder
-COPY --from=builder /build/wheels /tmp/wheels
+# Copiar wheels del builder Python
+COPY --from=python-builder /build/wheels /tmp/wheels
 COPY requirements.txt .
 
-# Instalar desde wheels (sin compilar)
+# Instalar dependencias Python desde wheels
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --no-index --find-links /tmp/wheels -r requirements.txt
 
-# Copiar código de la aplicación
-COPY . .
+# Copiar código backend
+COPY backend/ ./backend/
 
-# Usuario no-root
+# Copiar React compilado a /app/static (FastAPI lo servará)
+COPY --from=react-build /react-build/dist ./static/
+
+# Usuario no-root (Debian syntax)
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8888/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
-# Exponer puerto
-EXPOSE 8888
+EXPOSE 8000
 
-# Comando de inicio (con variables de entorno)
 CMD ["uvicorn", "backend.app:app", \
      "--host", "0.0.0.0", \
-     "--port", "8888", \
+     "--port", "8000", \
      "--workers", "2"]

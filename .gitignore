@@ -3,5 +3,7 @@ OPTIMIZATIONS.md
 *.pyc
 __pycache__/
 *.onnx
-.venv
+*env
+*onnx*
 .kiro
+/frontend/node_modules/
