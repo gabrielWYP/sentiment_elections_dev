@@ -1,0 +1,56 @@
+# Docker Compose para desarrollo y testing
+# Ejecutar con: docker-compose up
+# Frontend: http://localhost:3000
+# Backend: http://localhost:8000
+# Sentiment Service: http://localhost:8001
+
+version: '3.8'
+
+services:
+  # Sentiment Analysis Microservice
+  sentiment-service:
+    build:
+      context: .
+      dockerfile: sentiment-service/Dockerfile
+    container_name: sentiment-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    volumes:
+      - sentiment_cache:/root/.cache/huggingface
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_MODE=DEVELOPMENT
+      - SENTIMENT_SERVICE_URL=http://sentiment-service:8001
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      sentiment-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  sentiment_cache:
+    driver: local

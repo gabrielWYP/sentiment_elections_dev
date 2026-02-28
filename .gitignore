@@ -5,3 +5,4 @@ __pycache__/
 *.onnx
 .venv
 .kiro
+/frontend/node_modules/

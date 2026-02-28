@@ -153,3 +153,73 @@ class ErrorResponse(BaseModel):
                 "error_type": "invalid_url"
             }
         }
+
+
+# ==================== SENTIMENT ANALYSIS REQUESTS/RESPONSES ====================
+
+class AnalyzeSentimentRequest(BaseModel):
+    """Request para analizar sentimientos de múltiples textos"""
+    texts: List[str] = Field(..., description="Lista de textos a analizar")
+    language: str = Field(default="es", description="Idioma de los textos")
+    use_simplified: bool = Field(default=True, description="Si usa 3 clases (positive/negative/neutral) o 5")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "texts": [
+                    "Excelente análisis sobre las elecciones",
+                    "No estoy de acuerdo con este candidato"
+                ],
+                "language": "es",
+                "use_simplified": True
+            }
+        }
+
+
+class SentimentResult(BaseModel):
+    """Resultado del análisis de sentimiento para un texto"""
+    text: str
+    sentiment: str  # "positive", "negative", "neutral"
+    score: float  # 0.0-1.0
+    confidence: float  # 0.0-1.0
+    raw_label: Optional[str] = None
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "text": "Excelente análisis sobre las elecciones",
+                "sentiment": "positive",
+                "score": 0.75,
+                "confidence": 0.95,
+                "raw_label": "5 stars"
+            }
+        }
+
+
+class AnalyzeSentimentResponse(BaseModel):
+    """Respuesta al analizar sentimientos"""
+    success: bool
+    message: str
+    texts_analyzed: int
+    sentiments: List[str]  # Lista de sentimientos en el mismo orden que textos
+    results: List[SentimentResult]
+    stats: dict  # Estadísticas agregadas
+    execution_time_seconds: float
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "message": "Se analizaron 2 textos exitosamente",
+                "texts_analyzed": 2,
+                "sentiments": ["positive", "negative"],
+                "results": [],
+                "stats": {
+                    "total": 2,
+                    "positive": 1,
+                    "negative": 1,
+                    "neutral": 0
+                },
+                "execution_time_seconds": 1.2
+            }
+        }

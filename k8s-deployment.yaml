@@ -1,0 +1,225 @@
+# Kubernetes manifests para despliegue en K3s
+# Aplicar con: kubectl apply -f k8s/
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sentiment-elections
+
+---
+# PersistentVolume para modelo BERT (compartido entre replicas)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sentiment-model-pv
+  namespace: sentiment-elections
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadOnlyMany  # Solo lectura, compartido entre replicas
+  hostPath:
+    path: /data/sentiment-model
+    type: DirectoryOrCreate
+
+---
+# PersistentVolumeClaim para el modelo
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sentiment-model-pvc
+  namespace: sentiment-elections
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: sentiment-model-pv
+
+---
+# ConfigMap con variables de configuración
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: sentiment-elections
+data:
+  SENTIMENT_SERVICE_URL: "http://sentiment-service:8001"
+  APP_MODE: "PRODUCTION"
+
+---
+# Service para Sentiment Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: sentiment-service
+  namespace: sentiment-elections
+spec:
+  selector:
+    app: sentiment-service
+  ports:
+    - protocol: TCP
+      port: 8001
+      targetPort: 8001
+  type: ClusterIP
+
+---
+# Deployment para Sentiment Service (1 replica, el modelo es pesado)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentiment-service
+  namespace: sentiment-elections
+spec:
+  replicas: 1  # Solo una replica del modelo (pesado)
+  selector:
+    matchLabels:
+      app: sentiment-service
+  template:
+    metadata:
+      labels:
+        app: sentiment-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+    spec:
+      containers:
+      - name: sentiment-service
+        image: sentiment-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8001
+          name: http
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "3Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+---
+# Service para Backend
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: sentiment-elections
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: LoadBalancer
+
+---
+# Deployment para Backend (puede escalar)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: sentiment-elections
+spec:
+  replicas: 2  # Puede tener multiples replicas
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: backend-app:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: APP_MODE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: APP_MODE
+        - name: SENTIMENT_SERVICE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: SENTIMENT_SERVICE_URL
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 40
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+---
+# HorizontalPodAutoscaler para Backend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+  namespace: sentiment-elections
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

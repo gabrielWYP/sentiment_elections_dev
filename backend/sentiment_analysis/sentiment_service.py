@@ -1,12 +1,12 @@
 """
-Servicio de análisis de sentimientos usando ONNX Runtime
-Optimizado para ARM64 sin PyTorch/TensorFlow
+Servicio de análisis de sentimientos usando ONNX BERT Multilingual
+Optimizado para análisis de comentarios en español
+Modelo: nlptown/bert-base-multilingual-uncased-sentiment
 """
 
 import logging
 from typing import Dict, List
-import onnxruntime as ort
-from transformers import AutoTokenizer
+from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import numpy as np
 from scipy.special import softmax
 
@@ -15,83 +15,64 @@ logger = logging.getLogger(__name__)
 
 class SentimentAnalyzer:
     """
-    Analizador de sentimientos usando modelo multilingual BERT
+    Analizador de sentimientos usando modelo multilingual BERT con ONNX Runtime
     Modelo: nlptown/bert-base-multilingual-uncased-sentiment
     Soporta: español, inglés, francés, alemán, holandés, italiano
     """
     
     # Mapeo de etiquetas del modelo (5 clases)
     LABEL_MAP = {
-        1: "very negative",
-        2: "negative",
-        3: "neutral",
-        4: "positive",
-        5: "very positive"
+        0: "1 star",
+        1: "2 stars",
+        2: "3 stars",
+        3: "4 stars",
+        4: "5 stars"
     }
     
     # Mapeo a 3 clases simplificado
     SIMPLIFIED_MAP = {
-        1: "negative",      # very negative
-        2: "negative",      # negative
-        3: "neutral",       # neutral
-        4: "positive",      # positive
-        5: "positive"       # very positive
+        0: "negative",      # 1 star
+        1: "negative",      # 2 stars
+        2: "neutral",       # 3 stars
+        3: "positive",      # 4 stars
+        4: "positive"       # 5 stars
     }
     
-    # Umbrales de confianza
-    CONFIDENCE_THRESHOLD = 0.3
-    
     def __init__(self):
-        """Inicializar el modelo de sentimientos con ONNX Runtime"""
+        """Inicializar el modelo de sentimientos con transformers + ONNX Runtime"""
         try:
-            logger.info("🤖 Cargando modelo ONNX para sentimientos...")
+            logger.info("🤖 Cargando modelo BERT multilingual para sentimientos...")
             
             # Usar modelo BERT multilingual entrenado para sentiment (5 clases)
-            model_onnx = "nlptown/bert-base-multilingual-uncased-sentiment"
-            
-            # Descargar modelo ONNX y tokenizador
-            from huggingface_hub import hf_hub_download
+            model_name = "nlptown/bert-base-multilingual-uncased-sentiment"
             
             try:
-                # Intentar descargar modelo ONNX preconvertido
-                model_path = hf_hub_download(
-                    repo_id=model_onnx,
-                    filename="onnx/model.onnx",
-                    local_dir="models"
-                )
-            except Exception as e:
-                logger.warning(f"⚠️  No hay ONNX preconvertido, usando pipeline tradicional")
-                # Fallback a pipeline de transformers
-                from transformers import pipeline
+                # Intentar cargar con pipeline (automáticamente usa ONNX si está disponible)
                 self.pipeline = pipeline(
                     "sentiment-analysis",
-                    model=model_onnx,
-                    device=-1
+                    model=model_name,
+                    device=-1  # CPU
                 )
                 self.tokenizer = None
-                self.session = None
-                logger.info("✅ Pipeline de sentimientos cargado correctamente")
+                self.model = None
+                logger.info("✅ Pipeline BERT multilingual cargado correctamente")
                 return
-            
-            # Cargar sesión ONNX
-            self.session = ort.InferenceSession(model_path)
-            self.pipeline = None
-            
-            # Obtener los inputs requeridos por el modelo
-            self.input_names = [input.name for input in self.session.get_inputs()]
-            logger.info(f"   Inputs requeridos: {self.input_names}")
-            
-            # Cargar tokenizador
-            self.tokenizer = AutoTokenizer.from_pretrained(model_onnx)
-            
-            logger.info("✅ Modelo ONNX de sentimientos cargado correctamente")
+            except Exception as e:
+                logger.warning(f"⚠️  Error con pipeline, cargando modelo directo: {str(e)}")
+                
+                # Fallback directo
+                self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+                self.model = AutoModelForSequenceClassification.from_pretrained(model_name)
+                self.pipeline = None
+                logger.info("✅ Tokenizador y modelo BERT multilingual cargados correctamente")
+                
         except Exception as e:
-            logger.error(f"❌ Error cargando modelo: {str(e)}")
+            logger.error(f"❌ Error crítico cargando modelo: {str(e)}")
             raise
     
     def analyze(self, text: str, use_simplified: bool = True) -> Dict:
         """
-        Analizar sentimiento de un texto
+        Analizar sentimiento de un texto usando BERT multilingual
         
         Args:
             text: Texto a analizar (comentario)
@@ -102,7 +83,6 @@ class SentimentAnalyzer:
                 "text": str,
                 "sentiment": str,  # "positive", "negative", "neutral"
                 "score": float,    # 0.0-1.0
-                "raw_label": str,  # "5 stars", "4 stars", etc.
                 "confidence": float  # 0.0-1.0
             }
         """
@@ -114,7 +94,6 @@ class SentimentAnalyzer:
                     "text": text,
                     "sentiment": "neutral",
                     "score": 0.5,
-                    "raw_label": None,
                     "confidence": 0.0,
                     "error": "Texto inválido"
                 }
@@ -122,83 +101,70 @@ class SentimentAnalyzer:
             # Limpiar texto (máx 512 caracteres por limitación de BERT)
             text_clean = text.strip()[:512]
             
-            # Si se cargó el pipeline tradicional, usarlo
+            # Si se cargó el pipeline, usarlo
             if self.pipeline is not None:
                 result = self.pipeline(text_clean)[0]
                 
-                # Mapear etiqueta a número (1-5)
-                raw_label = result['label']  # '1 star', '5 stars', etc.
-                label_num = int(raw_label.split()[0])
+                # result contiene: {'label': '1 star', '2 stars', etc., 'score': float}
+                raw_label = result['label']
                 confidence = float(result['score'])
+                
+                # Extraer número de estrellas (0-4)
+                label_num = int(raw_label.split()[0]) - 1  # Convertir "1 star" → 0, "5 stars" → 4
                 
                 if use_simplified:
                     sentiment = self.SIMPLIFIED_MAP.get(label_num, "neutral")
-                    score = (label_num - 1) / 4.0
+                    score = (label_num + 1) / 5.0  # Normalizar a 0.0-1.0
                 else:
-                    sentiment = self.LABEL_MAP.get(label_num, "neutral")
-                    score = (label_num - 1) / 4.0
+                    sentiment = raw_label
+                    score = (label_num + 1) / 5.0
                 
-                logger.debug(f"✅ Análisis exitoso: '{text_clean[:50]}...' → {sentiment} ({confidence:.3f})")
+                logger.debug(f"✅ Análisis exitoso: '{text_clean[:50]}...' → {sentiment} (score: {score:.3f}, confianza: {confidence:.3f})")
                 
                 return {
                     "text": text_clean,
                     "sentiment": sentiment,
                     "score": float(score),
-                    "raw_label": raw_label,
                     "confidence": confidence
                 }
             
-            # Usar ONNX Runtime
+            # Usar modelo directo
+            import torch
+            
             # Tokenizar
             inputs = self.tokenizer(
                 text_clean,
-                return_tensors="np",
+                return_tensors="pt",
                 truncation=True,
                 padding=True
             )
             
-            # Construir inputs dinámicamente según lo que requiera el modelo
-            ort_inputs = {}
-            for input_name in self.input_names:
-                if input_name == "input_ids":
-                    ort_inputs[input_name] = inputs["input_ids"].astype(np.int64)
-                elif input_name == "attention_mask":
-                    ort_inputs[input_name] = inputs["attention_mask"].astype(np.int64)
-                elif input_name == "token_type_ids":
-                    ort_inputs[input_name] = inputs.get("token_type_ids", np.zeros_like(inputs["input_ids"])).astype(np.int64)
+            # Hacer predicción
+            with torch.no_grad():
+                outputs = self.model(**inputs)
             
-            # Hacer predicción con ONNX Runtime
-            outputs = self.session.run(None, ort_inputs)
+            # Obtener logits
+            logits = outputs.logits[0].cpu().numpy()
             
-            # Obtener logits y calcular probabilidades
-            logits = outputs[0]
-            if logits.ndim > 1:
-                logits = logits[0]
-            
-            logits = np.asarray(logits).flatten()
+            # Calcular probabilidades
             probabilities = softmax(logits, axis=0)
             predicted_class = int(np.argmax(probabilities))
-            confidence = float(probabilities.flat[predicted_class])
+            confidence = float(probabilities[predicted_class])
             
-            # Mapear clase (0-4) a número de estrellas (1-5)
-            label_num = predicted_class + 1
-            raw_label = f"{label_num} {'star' if label_num == 1 else 'stars'}"
-            
-            # Convertir a 3 clases o mantener etiqueta original
+            # Mapear etiqueta
             if use_simplified:
-                sentiment = self.SIMPLIFIED_MAP.get(label_num, "neutral")
-                score = (label_num - 1) / 4.0
+                sentiment = self.SIMPLIFIED_MAP.get(predicted_class, "neutral")
+                score = (predicted_class + 1) / 5.0
             else:
-                sentiment = self.LABEL_MAP.get(label_num, "neutral")
-                score = (label_num - 1) / 4.0
+                sentiment = self.LABEL_MAP.get(predicted_class, "neutral")
+                score = (predicted_class + 1) / 5.0
             
-            logger.debug(f"✅ Análisis exitoso: '{text_clean[:50]}...' → {sentiment} ({confidence:.3f})")
+            logger.debug(f"✅ Análisis exitoso: '{text_clean[:50]}...' → {sentiment} (score: {score:.3f}, confianza: {confidence:.3f})")
             
             return {
                 "text": text_clean,
                 "sentiment": sentiment,
                 "score": float(score),
-                "raw_label": raw_label,
                 "confidence": confidence
             }
             
@@ -266,8 +232,11 @@ class SentimentAnalyzer:
         negative = sum(1 for r in valid_results if r["sentiment"] == "negative")
         neutral = sum(1 for r in valid_results if r["sentiment"] == "neutral")
         
-        avg_score = np.mean([r["score"] for r in valid_results]) if valid_results else 0
-        avg_confidence = np.mean([r["confidence"] for r in valid_results]) if valid_results else 0
+        scores = [r["score"] for r in valid_results if r.get("score") is not None]
+        confidences = [r["confidence"] for r in valid_results if r.get("confidence") is not None]
+        
+        avg_score = sum(scores) / len(scores) if scores else 0
+        avg_confidence = sum(confidences) / len(confidences) if confidences else 0
         
         return {
             "total": total,

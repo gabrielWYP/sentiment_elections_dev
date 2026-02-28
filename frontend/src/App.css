@@ -1,0 +1,100 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 40px 20px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  color: white;
+  margin-bottom: 10px;
+  font-size: 2.5em;
+}
+
+.header .subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1em;
+  margin-bottom: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  padding: 0 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tab {
+  padding: 12px 20px;
+  background: white;
+  color: #667eea;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.tab:hover:not(:disabled) {
+  border-color: #667eea;
+  background: #f8f9fa;
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.container {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: calc(100% - 40px);
+}
+
+.footer {
+  text-align: center;
+  padding: 20px;
+  color: white;
+  margin-top: 20px;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.status-dot.online {
+  background: #4caf50;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
