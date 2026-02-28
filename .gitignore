@@ -4,3 +4,4 @@ OPTIMIZATIONS.md
 __pycache__/
 *.onnx
 .venv
+.kiro
