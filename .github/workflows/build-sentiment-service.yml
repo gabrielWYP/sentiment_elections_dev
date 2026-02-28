@@ -27,30 +27,35 @@ jobs:
 
       - name: Descargar modelo desde OCI Object Storage
         run: |
-          echo "📥 Descargando modelo cuantizado desde OCI..."
+          echo "📥 Descargando modelo desde OCI..."
           
-          # Crear la carpeta si no existe
-          mkdir -p sentiment-service/modelo_onnx/modelo_quantized
+          # Descargar el archivo TAR.GZ desde OCI (en carpeta sentiment_analysis/)
+          curl -L "${{ secrets.URL_READ_SENTIMENT }}sentiment_analysis/modelo_onnx.tar.gz" \
+            -o modelo_onnx.tar.gz
           
-          # Descargar el archivo ZIP desde OCI
-          curl -L "${{ secrets.URL_READ_SENTIMENT }}" \
-            -o sentiment-service/modelo_onnx.zip
+          # Verificar que se descargó correctamente (debe ser > 100MB)
+          FILE_SIZE=$(stat -c%s "modelo_onnx.tar.gz")
+          if [ "$FILE_SIZE" -lt 100000000 ]; then
+            echo "❌ Error: archivo descargado es muy pequeño ($FILE_SIZE bytes)"
+            echo "Probablemente sea un error HTML, no el modelo real"
+            exit 1
+          fi
           
-          # Descomprimir 
-          unzip -q sentiment-service/modelo_onnx.zip \
-            -d sentiment-service/modelo_onnx/
+          # Descomprimir en sentiment-service/
+          # El TAR contiene: modelo_onnx/modelo_normal/ y modelo_onnx/modelo_quantized/
+          tar -xzf modelo_onnx.tar.gz -C sentiment-service/
           
           # Verificar que se descargó correctamente
           if [ ! -f "sentiment-service/modelo_onnx/modelo_quantized/model.onnx" ]; then
-            echo "❌ Error: el modelo no se descargó correctamente"
+            echo "❌ Error: el modelo no se extrajo correctamente"
             exit 1
           fi
           
           # Limpiar
-          rm sentiment-service/modelo_onnx.zip
+          rm modelo_onnx.tar.gz
           
           echo "✅ Modelo descargado y configurado"
-          ls -la sentiment-service/modelo_onnx/
+          ls -lah sentiment-service/modelo_onnx/
 
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -85,7 +90,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
 
       - name: Extraer image tag
         id: image-tag
@@ -118,7 +123,7 @@ jobs:
 #     name: Deploy sentiment-service to K3S
 #     needs: build-and-push
 #     if: github.event_name != 'pull_request'
-#     uses: gabrielWYP/K3S_Infra/.github/workflows/deploy-sentiment-analysis.yml@main
+#     uses: gabrielWYP/K3S_Infra/.github/workflows/deploy-vocational-sentiment-service.yml@main
 #     with:
 #       image-tag: ${{ needs.build-and-push.outputs.image-tag }}
 #       kube-namespace: ${{ vars.KUBE_NAMESPACE }}
