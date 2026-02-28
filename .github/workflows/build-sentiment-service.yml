@@ -1,0 +1,128 @@
+name: Publicar sentiment-service en GHCR
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+    paths:
+      - "sentiment-service/**"
+      - ".github/workflows/build-sentiment-service.yml"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/sentiment-service
+
+jobs:
+  build-and-push:
+    runs-on: self-hosted 
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Descargar modelo desde OCI Object Storage
+        run: |
+          echo "📥 Descargando modelo cuantizado desde OCI..."
+          
+          # Crear la carpeta si no existe
+          mkdir -p sentiment-service/modelo_onnx/modelo_quantized
+          
+          # Descargar el archivo ZIP desde OCI
+          curl -L "${{ secrets.URL_READ_SENTIMENT }}" \
+            -o sentiment-service/modelo_onnx.zip
+          
+          # Descomprimir 
+          unzip -q sentiment-service/modelo_onnx.zip \
+            -d sentiment-service/modelo_onnx/
+          
+          # Verificar que se descargó correctamente
+          if [ ! -f "sentiment-service/modelo_onnx/modelo_quantized/model.onnx" ]; then
+            echo "❌ Error: el modelo no se descargó correctamente"
+            exit 1
+          fi
+          
+          # Limpiar
+          rm sentiment-service/modelo_onnx.zip
+          
+          echo "✅ Modelo descargado y configurado"
+          ls -la sentiment-service/modelo_onnx/
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Autenticarse en GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extraer metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build y Push a GHCR
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./sentiment-service
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Extraer image tag
+        id: image-tag
+        if: github.event_name != 'pull_request'
+        run: |
+          # Extraer el tag de la metadata (main-<short-sha>)
+          TAGS="${{ steps.meta.outputs.tags }}"
+          
+          # Obtener el primer tag que tenga formato main-
+          IMAGE_TAG=$(echo "$TAGS" | grep -oP 'main-[a-f0-9]+' | head -1)
+          
+          if [ -z "$IMAGE_TAG" ]; then
+            # Fallback: usar commit SHA corto
+            IMAGE_TAG="main-$(echo ${{ github.sha }} | cut -c1-7)"
+          fi
+          
+          echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "📦 Image tag: ${IMAGE_TAG}"
+
+      - name: Mostrar resumen
+        run: |
+          echo "✅ Build completado"
+          echo "📦 Imagen: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          echo "🏷️  Tags: ${{ steps.meta.outputs.tags }}"
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "📦 Image tag exportado: ${{ steps.image-tag.outputs.tag }}"
+          fi
+
+#   deploy-to-k3s:
+#     name: Deploy sentiment-service to K3S
+#     needs: build-and-push
+#     if: github.event_name != 'pull_request'
+#     uses: gabrielWYP/K3S_Infra/.github/workflows/deploy-sentiment-analysis.yml@main
+#     with:
+#       image-tag: ${{ needs.build-and-push.outputs.image-tag }}
+#       kube-namespace: ${{ vars.KUBE_NAMESPACE }}
+#       kube-deployment: ${{ vars.KUBE_DEPLOYMENT_SENTIMENT }}
+#       registry: ${{ vars.REGISTRY }}
+#     secrets:
+#       KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
