@@ -5,6 +5,8 @@ import CommentsList from './components/CommentsList/CommentsList'
 import SentimentAnalysis from './components/SentimentAnalysis/SentimentAnalysis'
 import './App.css'
 
+//ci/cd
+
 function App() {
   const [activeTab, setActiveTab] = useState('scraper')
   const [comments, setComments] = useState([])
