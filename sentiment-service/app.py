@@ -8,7 +8,7 @@ from typing import List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Logging
+# Logging ci/cd
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
