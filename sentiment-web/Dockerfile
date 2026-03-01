@@ -5,8 +5,8 @@ WORKDIR /react-build
 
 COPY package*.json ./
 
-# Instalar sin scripts opcionales para ahorrar recursos
-RUN npm ci --frozen-lockfile --omit=dev
+# Instalar 
+RUN npm ci --frozen-lockfile
 
 COPY frontend/ .
 
