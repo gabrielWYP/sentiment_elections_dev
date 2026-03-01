@@ -74,7 +74,7 @@ class ONNXSentimentAnalyzer:
             if use_simplified:
                 if pred_idx in [0, 1]:
                     sentiment = "negative"
-                    score = 0.0 + (pred_idx * 0.25) 
+                    score = 0.0
                 elif pred_idx == 2:
                     sentiment = "neutral"
                     score = 0.5
