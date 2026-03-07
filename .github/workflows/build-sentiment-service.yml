@@ -119,15 +119,20 @@ jobs:
             echo "📦 Image tag exportado: ${{ steps.image-tag.outputs.tag }}"
           fi
 
-#   deploy-to-k3s:
-#     name: Deploy sentiment-service to K3S
-#     needs: build-and-push
-#     if: github.event_name != 'pull_request'
-#     uses: gabrielWYP/K3S_Infra/.github/workflows/deploy-vocational-sentiment-service.yml@main
-#     with:
-#       image-tag: ${{ needs.build-and-push.outputs.image-tag }}
-#       kube-namespace: ${{ vars.KUBE_NAMESPACE }}
-#       kube-deployment: ${{ vars.KUBE_DEPLOYMENT_SENTIMENT }}
-#       registry: ${{ vars.REGISTRY }}
-#     secrets:
-#       KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+  deploy-to-k3s:
+      name: Deploy to K3S
+      needs: build-and-push
+      if: github.event_name != 'pull_request'
+      uses: gabrielWYP/K3S_Infra/.github/workflows/deploy-sentiment-analysis.yml@main
+      with:
+        image-tag: ${{ needs.build-and-push.outputs.image-tag }}
+        kube-namespace: ${{ vars.KUBE_NAMESPACE }}
+        kube-deployment: ${{ vars.KUBE_DEPLOYMENT_MODEL }}
+        registry: ${{ vars.REGISTRY }}
+        port : ${{ vars.PORT_MODEL}}
+      secrets:
+        KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+        ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        ORACLE_PASSWORD: ${{ secrets.ORACLE_PASSWORD }}
+        ORACLE_CONNECTION_STRING: ${{ secrets.ORACLE_CONNECTION_STRING }}
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
