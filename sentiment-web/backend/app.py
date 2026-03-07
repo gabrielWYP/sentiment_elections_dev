@@ -11,6 +11,7 @@ Estructura:
 - database/: Conexión Oracle + modelos
 - utils/: Utilidades y helpers
 """
+#ci/cd
 
 
 import logging
