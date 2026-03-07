@@ -104,6 +104,7 @@ jobs:
         port : ${{ vars.PORT_WEB}}
         image-name: sentiment-web
         container-name: sentiment-analysis-web
+        deployment-manifest: 03-workloads/backend-deployment.yaml
       secrets:
         KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
         ORACLE_USER: ${{ secrets.ORACLE_USER }}
