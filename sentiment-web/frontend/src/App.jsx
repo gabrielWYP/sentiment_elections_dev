@@ -84,8 +84,11 @@ function App() {
   return (
     <div className="app">
       <header className="header">
-        <div className="container">
-          <h1>🇵🇪 Termómetro Político Perú 2026</h1>
+        <div className="header-card">
+          <h1 className="brand-title">
+            <img src="/sensivoto.svg" alt="SentiVoto" className="brand-logo" />
+            <span>Termómetro Político Perú 2026</span>
+          </h1>
           <p className="subtitle">Análisis de sentimientos en comentarios de YouTube</p>
         </div>
       </header>
@@ -113,7 +116,7 @@ function App() {
         </button>
       </nav>
 
-      <main className="container">
+      <main className="main-container">
         {error && (
           <div className="alert alert-error">
             ❌ {error}

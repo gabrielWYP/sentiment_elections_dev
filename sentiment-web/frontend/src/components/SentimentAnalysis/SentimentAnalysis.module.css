@@ -14,26 +14,29 @@
 }
 
 .sentiment-analysis h2 {
-  color: #333;
+  color: var(--brand-secondary);
   margin-bottom: 20px;
   font-size: 1.8em;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.4px;
 }
 
 .video-title {
-  background: #f8f9fa;
+  background: var(--surface-soft);
   padding: 15px;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 25px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--brand-primary);
+  border: 1px solid var(--line);
 }
 
 .video-title p {
   margin: 5px 0;
-  color: #333;
+  color: var(--ink);
 }
 
 .video-subtitle {
-  color: #999;
+  color: #64748b;
   font-size: 0.9em !important;
 }
 
@@ -46,14 +49,15 @@
 
 .stat-card {
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
   color: white;
   font-weight: 600;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.15);
 }
 
 .stat-card.total {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(120deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
 }
 
 .stat-card.positive {
@@ -85,14 +89,15 @@
 }
 
 .chart-container {
-  background: #f8f9fa;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
   padding: 25px;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 30px;
 }
 
 .chart-container h3 {
-  color: #333;
+  color: var(--brand-secondary);
   margin-top: 0;
   margin-bottom: 20px;
 }
@@ -109,15 +114,15 @@
 }
 
 .bar-label {
-  color: #333;
+  color: var(--ink);
   font-weight: 600;
   font-size: 0.95em;
 }
 
 .bar-wrapper {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
   height: 40px;
   overflow: hidden;
 }
@@ -158,13 +163,14 @@
 }
 
 .detail-column {
-  background: #f8f9fa;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .detail-column h3 {
-  color: #333;
+  color: var(--brand-secondary);
   margin-top: 0;
   margin-bottom: 15px;
   font-size: 1.1em;
@@ -201,23 +207,23 @@
 
 .sentiment-text {
   margin: 0 0 8px 0;
-  color: #333;
+  color: var(--ink);
   font-size: 0.9em;
   line-height: 1.4;
 }
 
 .author-badge {
   display: inline-block;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(15, 23, 42, 0.08);
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 0.8em;
-  color: #666;
+  color: #475569;
 }
 
 .more-items {
   text-align: center;
-  color: #999;
+  color: #64748b;
   font-size: 0.9em;
   padding: 10px 0;
   margin: 0;
@@ -226,17 +232,18 @@
 
 .no-items {
   text-align: center;
-  color: #999;
+  color: #64748b;
   font-size: 0.9em;
   padding: 20px 0;
   margin: 0;
 }
 
 .conclusion {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(120deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
   color: white;
   padding: 25px;
-  border-radius: 8px;
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgba(165, 13, 37, 0.22);
 }
 
 .conclusion h3 {

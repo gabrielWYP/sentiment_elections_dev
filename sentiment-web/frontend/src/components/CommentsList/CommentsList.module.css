@@ -14,11 +14,12 @@
 }
 
 .video-info {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(120deg, var(--brand-primary) 0%, var(--brand-secondary) 82%);
   color: white;
   padding: 25px;
-  border-radius: 8px;
+  border-radius: 14px;
   margin-bottom: 25px;
+  box-shadow: 0 12px 24px rgba(165, 13, 37, 0.22);
 }
 
 .video-info h2 {
@@ -35,7 +36,8 @@
 }
 
 .video-meta span {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   padding: 8px 15px;
   border-radius: 20px;
 }
@@ -43,10 +45,10 @@
 .analyze-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(120deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1.05em;
   font-weight: 600;
   cursor: pointer;
@@ -59,8 +61,15 @@
 }
 
 .analyze-button:hover:not(:disabled) {
+  background: linear-gradient(120deg, var(--brand-primary-strong) 0%, #0f2a4a 100%) !important;
+  color: #ffffff !important;
   transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 22px rgba(165, 13, 37, 0.28);
+}
+
+.analyze-button:active:not(:disabled) {
+  background: linear-gradient(120deg, var(--brand-primary-strong) 0%, #0f2a4a 100%) !important;
+  color: #ffffff !important;
 }
 
 .analyze-button:disabled {
@@ -88,16 +97,16 @@
 }
 
 .comment-card {
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
   padding: 18px;
   transition: all 0.3s ease;
 }
 
 .comment-card:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+  border-color: rgba(200, 16, 46, 0.35);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
 .comment-header {
@@ -116,12 +125,12 @@
 }
 
 .author {
-  color: #333;
+  color: var(--ink);
   font-size: 1em;
 }
 
 .badge-reply {
-  background: #667eea;
+  background: var(--brand-secondary);
   color: white;
   padding: 3px 10px;
   border-radius: 12px;
@@ -130,12 +139,12 @@
 }
 
 .date {
-  color: #999;
+  color: #64748b;
   font-size: 0.9em;
 }
 
 .comment-text {
-  color: #555;
+  color: #334155;
   line-height: 1.6;
   margin: 12px 0;
   word-wrap: break-word;
@@ -146,7 +155,7 @@
   justify-content: space-between;
   align-items: center;
   font-size: 0.9em;
-  color: #666;
+  color: #475569;
   flex-wrap: wrap;
   gap: 10px;
 }

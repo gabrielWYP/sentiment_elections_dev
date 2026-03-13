@@ -46,7 +46,7 @@ function ScraperForm({ onExtract, loading }) {
           </div>
         </div>
 
-        <button type="submit" disabled={loading}>
+        <button type="submit" className={styles['extract-button']} disabled={loading}>
           {loading ? (
             <>
               <span className={styles['loading']}></span> Extrayendo...

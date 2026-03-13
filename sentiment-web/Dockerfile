@@ -8,7 +8,7 @@ COPY package*.json ./
 # Instalar 
 RUN npm ci --frozen-lockfile
 
-COPY frontend/ .
+COPY frontend/ ./frontend/
 
 # Aumentar memoria de Node.js para Vite/esbuild durante el build
 # y limitar threads para evitar problemas en QEMU
@@ -64,8 +64,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copiar código backend
 COPY backend/ ./backend/
 
-# Copiar React compilado a /app/static (FastAPI lo servará)
-COPY --from=react-build /react-build/dist ./static/
+# Copiar React compilado a /app/static (FastAPI lo servira)
+COPY --from=react-build /react-build/frontend/dist ./static/
 
 # Usuario no-root (Debian syntax)
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
