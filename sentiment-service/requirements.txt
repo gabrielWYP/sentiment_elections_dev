@@ -9,3 +9,6 @@ onnxruntime==1.17.1
 # Utilidades
 numpy<2.0.0
 python-dotenv==1.0.0
+
+#Observability
+prometheus-client==0.16.0

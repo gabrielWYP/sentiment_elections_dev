@@ -5,11 +5,25 @@ import onnxruntime as ort
 from transformers import AutoTokenizer
 from contextlib import asynccontextmanager
 from typing import List
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+import time
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+#PROMETHEUS
+SENTIMENT_COUNTER = Counter(
+    'sentiment_predictions_total', 
+    'Total de análisis de sentimiento realizados', 
+    ['resultado']
+)
+
+INFERENCE_LATENCY = Histogram(
+    'model_inference_seconds', 
+    'Tiempo que tarda el modelo en escupir el resultado'
+)
 
 # ==========================================
 # CONFIGURACIÓN DE ENTORNO
@@ -42,6 +56,10 @@ class ONNXSentimentAnalyzer:
         logger.info(f"✅ Modelo ONNX cargado: {model_path}")
 
     def analyze_batch(self, texts: List[str], use_simplified: bool = True) -> List[dict]:
+        
+        #Init clock
+        start_time = time.time()
+        
         inputs = self.tokenizer(
             texts, 
             return_tensors="np", 
@@ -59,6 +77,9 @@ class ONNXSentimentAnalyzer:
 
         logits = self.session.run(None, onnx_inputs)[0]
         
+        #Registrar latencia
+        INFERENCE_LATENCY.observe(time.time() - start_time)
+        
         exp_logits = np.exp(logits - np.max(logits, axis=1, keepdims=True))
         probabilities = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
         
@@ -67,6 +88,7 @@ class ONNXSentimentAnalyzer:
 
         results = []
         for i, text in enumerate(texts):
+            
             pred_idx = int(predicted_indices[i])
             conf = float(confidences[i])
             
@@ -91,6 +113,7 @@ class ONNXSentimentAnalyzer:
                 "confidence": conf
             })
             
+            SENTIMENT_COUNTER.labels(resultado=sentiment).inc()
         return results
 
 # ==========================================
@@ -141,6 +164,10 @@ async def health_check():
         "service": "sentiment-analysis-onnx",
         "model_loaded": analyzer is not None
     }
+    
+@app.get("/metrics")
+def get_metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_sentiment(request: AnalyzeRequest):
