@@ -31,6 +31,9 @@ from backend.api.routes import router as scraper_router
 # Importar cliente de sentiment service
 from backend.sentiment_analysis.sentiment_client import get_sentiment_client
 
+#Prometheus
+from prometheus_fastapi_instrumentator import Instrumentator
+
 # Cargar variables de entorno
 load_dotenv()
 
@@ -193,3 +196,6 @@ if frontend_dist.exists():
 else:
     logger.warning(f"⚠️  Directorio de frontend no encontrado: {frontend_dist}")
     logger.info("   En desarrollo, ejecuta: cd frontend && npm run dev")
+    
+#Prometheus monitoring
+Instrumentator().instrument(app).expose(app)
